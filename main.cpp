@@ -1,12 +1,14 @@
-#include "workload.hpp"
 #include "progressbar.hpp"
+#include "workload.hpp"
 
 int main() {
-    WorkLoad wl(100000);
-    std::thread t([&wl]() { wl.do_work(); });
-    ProgressBar<size_t, 1, DisplayComponent::All> pb(wl.tick, wl.work);
-    pb.init();
-    t.join();
+  WorkLoad wl(60000);
+  std::thread t([&wl]() { wl.do_work(); });
+  ProgressBar<size_t, DisplayComponent::All, DisplayComponent::ProgressBar,
+              DisplayComponent::ElapsedTime>
+      pb(wl.tick, wl.work);
+  pb.init();
+  t.join();
 }
 
 /*
