@@ -22,15 +22,27 @@ enum class DisplayComponent {
   All
 };
 
-struct PrinterBase {};
-
 template <DisplayComponent dc> struct ComponentFormatter;
 
 template <DisplayComponent... dcs> struct Printer;
 
-template <typename T, DisplayComponent... dcs> class ProgressBar {
-public:
+template <typename T, DisplayComponent... dcs> class ProgressBarImpl;
+
+template <typename T, DisplayComponent... dcs>
+struct ProgressBar : public ProgressBarImpl<T, dcs...> {
   ProgressBar(const T &progress, const T &max_progress)
+      : ProgressBarImpl<T, dcs...>(progress, max_progress) {}
+};
+
+template <typename T>
+struct ProgressBar<T> : public ProgressBarImpl<T, DisplayComponent::All> {
+  ProgressBar(const T &progress, const T &max_progress)
+      : ProgressBarImpl<T, DisplayComponent::All>(progress, max_progress) {}
+};
+
+template <typename T, DisplayComponent... dcs> class ProgressBarImpl {
+public:
+  ProgressBarImpl(const T &progress, const T &max_progress)
       : progress(progress), max_progress(max_progress), speed_history() {}
 
   void init() {
@@ -42,13 +54,11 @@ public:
           std::chrono::milliseconds(sampling_freq_millis));
       if (progress == max_progress) {
         print_progressbar();
-        plot_speed_history();
+        // plot_speed_history();
+        std::cout << '\n';
         break;
       }
     }
-    time_point end = std::chrono::steady_clock::now();
-    // std::cout << "\nJob completed in " << duration_sec(start, end) << " s" <<
-    // std::endl;
   }
 
 private:
@@ -187,50 +197,55 @@ private:
 };
 
 template <typename T, DisplayComponent... dcs>
-constexpr const size_t ProgressBar<T, dcs...>::bar_width;
+constexpr const size_t ProgressBarImpl<T, dcs...>::bar_width;
 template <typename T, DisplayComponent... dcs>
-constexpr const size_t ProgressBar<T, dcs...>::sampling_freq_millis;
+constexpr const size_t ProgressBarImpl<T, dcs...>::sampling_freq_millis;
 template <typename T, DisplayComponent... dcs>
-constexpr const char *ProgressBar<T, dcs...>::fillchar;
+constexpr const char *ProgressBarImpl<T, dcs...>::fillchar;
 template <typename T, DisplayComponent... dcs>
-constexpr const char *ProgressBar<T, dcs...>::emptychar;
+constexpr const char *ProgressBarImpl<T, dcs...>::emptychar;
 template <typename T, DisplayComponent... dcs>
-constexpr const size_t ProgressBar<T, dcs...>::history_window_size;
+constexpr const size_t ProgressBarImpl<T, dcs...>::history_window_size;
 template <typename T, DisplayComponent... dcs>
-constexpr const size_t ProgressBar<T, dcs...>::speed_history_size;
+constexpr const size_t ProgressBarImpl<T, dcs...>::speed_history_size;
 template <typename T, DisplayComponent... dcs>
-constexpr const size_t ProgressBar<T, dcs...>::speed_history_plot_height;
+constexpr const size_t ProgressBarImpl<T, dcs...>::speed_history_plot_height;
 
 template <DisplayComponent dc> struct ComponentFormatter {
   template <typename T, DisplayComponent... dcs>
-  static void print(const ProgressBar<T, dcs...> *pb, std::ostringstream &ss) {}
+  static void print(const ProgressBarImpl<T, dcs...> *pb,
+                    std::ostringstream &ss) {}
 };
 
 template <> struct ComponentFormatter<DisplayComponent::ElapsedTime> {
   template <typename T, DisplayComponent... dcs>
-  static void print(const ProgressBar<T, dcs...> *pb, std::ostringstream &ss) {
+  static void print(const ProgressBarImpl<T, dcs...> *pb,
+                    std::ostringstream &ss) {
     double current_time =
-        ProgressBar<T, dcs...>::duration_sec(pb->start, pb->current);
-    ss << "[Elapsed: " << ProgressBar<T, dcs...>::fmt_time(current_time) << "]";
+        ProgressBarImpl<T, dcs...>::duration_sec(pb->start, pb->current);
+    ss << "[Elapsed: " << ProgressBarImpl<T, dcs...>::fmt_time(current_time)
+       << "]";
   }
 };
 
 template <> struct ComponentFormatter<DisplayComponent::RawProgress> {
   template <typename T, DisplayComponent... dcs>
-  static void print(const ProgressBar<T, dcs...> *pb, std::ostringstream &ss) {
+  static void print(const ProgressBarImpl<T, dcs...> *pb,
+                    std::ostringstream &ss) {
     ss << "[Progress: " << pb->progress << '/' << pb->max_progress << " Ticks]";
   }
 };
 
 template <> struct ComponentFormatter<DisplayComponent::ProgressBar> {
   template <typename T, DisplayComponent... dcs>
-  static void print(const ProgressBar<T, dcs...> *pb, std::ostringstream &ss) {
+  static void print(const ProgressBarImpl<T, dcs...> *pb,
+                    std::ostringstream &ss) {
     ss << "|";
     for (size_t i = 0; i < pb->bar_width; i++) {
-      ss << ((i <= (pb->progress * ProgressBar<T, dcs...>::bar_width) /
+      ss << ((i <= (pb->progress * ProgressBarImpl<T, dcs...>::bar_width) /
                        pb->max_progress)
-                 ? ProgressBar<T, dcs...>::fillchar
-                 : ProgressBar<T, dcs...>::emptychar);
+                 ? ProgressBarImpl<T, dcs...>::fillchar
+                 : ProgressBarImpl<T, dcs...>::emptychar);
     }
     ss << "|";
   }
@@ -238,26 +253,29 @@ template <> struct ComponentFormatter<DisplayComponent::ProgressBar> {
 
 template <> struct ComponentFormatter<DisplayComponent::Percentage> {
   template <typename T, DisplayComponent... dcs>
-  static void print(const ProgressBar<T, dcs...> *pb, std::ostringstream &ss) {
+  static void print(const ProgressBarImpl<T, dcs...> *pb,
+                    std::ostringstream &ss) {
     double current_progress_percentage =
         (pb->progress * 100.0) / pb->max_progress;
-    ss << current_progress_percentage << "%";
+    ss << '[' << current_progress_percentage << "%]";
   }
 };
 
 template <> struct ComponentFormatter<DisplayComponent::EstimatedTime> {
   template <typename T, DisplayComponent... dcs>
-  static void print(const ProgressBar<T, dcs...> *pb, std::ostringstream &ss) {
+  static void print(const ProgressBarImpl<T, dcs...> *pb,
+                    std::ostringstream &ss) {
     double estimated_remaining_time =
         (pb->max_progress - pb->progress) / pb->current_speed;
     ss << "[Est.Remaining: "
-       << ProgressBar<T, dcs...>::fmt_time(estimated_remaining_time) << "]";
+       << ProgressBarImpl<T, dcs...>::fmt_time(estimated_remaining_time) << "]";
   }
 };
 
 template <> struct ComponentFormatter<DisplayComponent::Speed> {
   template <typename T, DisplayComponent... dcs>
-  static void print(const ProgressBar<T, dcs...> *pb, std::ostringstream &ss) {
+  static void print(const ProgressBarImpl<T, dcs...> *pb,
+                    std::ostringstream &ss) {
     ss << "[Speed: " << pb->current_speed << " Tick/s]";
   }
 };
@@ -269,7 +287,8 @@ template <DisplayComponent dc> struct Enum {
 
 template <DisplayComponent dc> struct FormatAllImpl {
   template <typename T, DisplayComponent... dcs>
-  static void print(const ProgressBar<T, dcs...> *pb, std::ostringstream &ss) {
+  static void print(const ProgressBarImpl<T, dcs...> *pb,
+                    std::ostringstream &ss) {
     FormatAllImpl<Enum<dc>::previous>::print(pb, ss);
     ComponentFormatter<Enum<dc>::previous>::print(pb, ss);
   }
@@ -277,12 +296,14 @@ template <DisplayComponent dc> struct FormatAllImpl {
 
 template <> struct FormatAllImpl<DisplayComponent::None> {
   template <typename T, DisplayComponent... dcs>
-  static void print(const ProgressBar<T, dcs...> *pb, std::ostringstream &ss) {}
+  static void print(const ProgressBarImpl<T, dcs...> *pb,
+                    std::ostringstream &ss) {}
 };
 
 template <> struct ComponentFormatter<DisplayComponent::All> {
   template <typename T, DisplayComponent... dcs>
-  static void print(const ProgressBar<T, dcs...> *pb, std::ostringstream &ss) {
+  static void print(const ProgressBarImpl<T, dcs...> *pb,
+                    std::ostringstream &ss) {
     FormatAllImpl<DisplayComponent::All>::print(pb, ss);
   }
 };
@@ -297,7 +318,8 @@ template <size_t idx, DisplayComponent... dcs> struct Selector {
 
 template <size_t idx, DisplayComponent... dcs> struct PrinterImpl {
   template <typename T>
-  static void print(const ProgressBar<T, dcs...> *pb, std::ostringstream &ss) {
+  static void print(const ProgressBarImpl<T, dcs...> *pb,
+                    std::ostringstream &ss) {
     PrinterImpl<idx - 1, dcs...>::print(pb, ss);
     ComponentFormatter<Selector<idx - 1, dcs...>::dc>::print(pb, ss);
   }
@@ -305,12 +327,14 @@ template <size_t idx, DisplayComponent... dcs> struct PrinterImpl {
 
 template <DisplayComponent... dcs> struct PrinterImpl<0, dcs...> {
   template <typename T>
-  static void print(const ProgressBar<T, dcs...> *pb, std::ostringstream &ss) {}
+  static void print(const ProgressBarImpl<T, dcs...> *pb,
+                    std::ostringstream &ss) {}
 };
 
 template <DisplayComponent... dcs> struct Printer {
   template <typename T>
-  static void print(const ProgressBar<T, dcs...> *pb, std::ostringstream &ss) {
+  static void print(const ProgressBarImpl<T, dcs...> *pb,
+                    std::ostringstream &ss) {
     PrinterImpl<sizeof...(dcs), dcs...>::print(pb, ss);
   }
 };

@@ -4,9 +4,10 @@
 int main() {
   WorkLoad wl(60000);
   std::thread t([&wl]() { wl.do_work(); });
-  ProgressBar<size_t, DisplayComponent::All, DisplayComponent::ProgressBar,
-              DisplayComponent::ElapsedTime>
-      pb(wl.tick, wl.work);
+//   ProgressBar<size_t, DisplayComponent::All, DisplayComponent::ProgressBar,
+//               DisplayComponent::ElapsedTime>
+//       pb(wl.tick, wl.work);
+  ProgressBar<size_t> pb(wl.tick, wl.work);
   pb.init();
   t.join();
 }
