@@ -7,7 +7,7 @@ int main() {
 //   ProgressBar<size_t, DisplayComponent::All, DisplayComponent::ProgressBar,
 //               DisplayComponent::ElapsedTime>
 //       pb(wl.tick, wl.work);
-  ProgressBar<size_t> pb(wl.tick, wl.work);
+  ProgressBar<const volatile size_t> pb(wl.tick, wl.work);
   pb.init();
   t.join();
 }

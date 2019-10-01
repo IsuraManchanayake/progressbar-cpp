@@ -65,13 +65,13 @@ private:
   template <DisplayComponent dc> friend struct ComponentFormatter;
   typedef std::chrono::time_point<std::chrono::steady_clock> time_point;
   /* configurations */
-  static constexpr const size_t bar_width = 50;
-  static constexpr const size_t sampling_freq_millis = 100;
+  static constexpr size_t bar_width = 50;
+  static constexpr size_t sampling_freq_millis = 100;
   static constexpr const char *fillchar = "█";
   static constexpr const char *emptychar = "―";
-  static constexpr const size_t history_window_size = 20;
-  static constexpr const size_t speed_history_size = 20;
-  static constexpr const size_t speed_history_plot_height = 15;
+  static constexpr size_t history_window_size = 20;
+  static constexpr size_t speed_history_size = 20;
+  static constexpr size_t speed_history_plot_height = 15;
   /* end configurations */
 
   /* members */
@@ -197,19 +197,19 @@ private:
 };
 
 template <typename T, DisplayComponent... dcs>
-constexpr const size_t ProgressBarImpl<T, dcs...>::bar_width;
+constexpr size_t ProgressBarImpl<T, dcs...>::bar_width;
 template <typename T, DisplayComponent... dcs>
-constexpr const size_t ProgressBarImpl<T, dcs...>::sampling_freq_millis;
+constexpr size_t ProgressBarImpl<T, dcs...>::sampling_freq_millis;
 template <typename T, DisplayComponent... dcs>
 constexpr const char *ProgressBarImpl<T, dcs...>::fillchar;
 template <typename T, DisplayComponent... dcs>
 constexpr const char *ProgressBarImpl<T, dcs...>::emptychar;
 template <typename T, DisplayComponent... dcs>
-constexpr const size_t ProgressBarImpl<T, dcs...>::history_window_size;
+constexpr size_t ProgressBarImpl<T, dcs...>::history_window_size;
 template <typename T, DisplayComponent... dcs>
-constexpr const size_t ProgressBarImpl<T, dcs...>::speed_history_size;
+constexpr size_t ProgressBarImpl<T, dcs...>::speed_history_size;
 template <typename T, DisplayComponent... dcs>
-constexpr const size_t ProgressBarImpl<T, dcs...>::speed_history_plot_height;
+constexpr size_t ProgressBarImpl<T, dcs...>::speed_history_plot_height;
 
 template <DisplayComponent dc> struct ComponentFormatter {
   template <typename T, DisplayComponent... dcs>
@@ -281,7 +281,7 @@ template <> struct ComponentFormatter<DisplayComponent::Speed> {
 };
 
 template <DisplayComponent dc> struct Enum {
-  static constexpr const DisplayComponent previous =
+  static constexpr DisplayComponent previous =
       static_cast<DisplayComponent>(static_cast<size_t>(dc) - 1);
 };
 
@@ -309,11 +309,11 @@ template <> struct ComponentFormatter<DisplayComponent::All> {
 };
 
 template <DisplayComponent... dcs> struct Container {
-  static constexpr const DisplayComponent dcsa[sizeof...(dcs)] = {dcs...};
+  static constexpr DisplayComponent dcsa[sizeof...(dcs)] = {dcs...};
 };
 
 template <size_t idx, DisplayComponent... dcs> struct Selector {
-  static constexpr const DisplayComponent dc = Container<dcs...>::dcsa[idx];
+  static constexpr DisplayComponent dc = Container<dcs...>::dcsa[idx];
 };
 
 template <size_t idx, DisplayComponent... dcs> struct PrinterImpl {
